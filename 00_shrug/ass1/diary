@@ -1,0 +1,17 @@
+Date		Start	Stop	Activity			Comments
+29/06/20	18:00	19:00	reading,coding		initialize shrug-init did initial basic things like checking for arguments and directory exists
+29/06/20	19:30	20:40	coding				thought and did shrug-add
+01/07/20	10:00	12:00	coding,debugging	continued working on shrug-add. Found bugs and changed the shrug-add.fixed bug with not checking if shrug-init has been executed			
+01/07/20	15:05	17:15	coding				started shrug-commit such as added case on how to check if there is nothing to commit
+02/07/20	12:00	22:00	coding,debugging	continued working on shrug-commit, found lots of bugs,and learnt more about git
+04/07/20	08:30	15:50	coding,debugging	continued working on shrug-commit, check shrug-commit -a -m and shrug-add. finish them
+05/07/20	08:30	11:30	coding,debugging	finished shrug-log and shrug-show. a
+06/07/20	8:30	11:30	coding				actually finished shrug-show this time and started shrug-rm and made tests.
+07/07/20	14:00	18:30	coding,debugging	wrote shrug-rm, but it was hard to solved some bugs.
+08/07/20	14:00	17:00	coding,debugging	started shrug-status and found previous problem,keepping dealing with previous problem
+
+09/07/20	08:30	11:30	debugging			continued dealing with previous problem, still cannot fix some bug 
+10/07/20	14:00	18:30	coding,debugging	Finished shrug-status and fixed bugs in shrug-rm.
+11/07/20	8:30	11:30	coding				Started subset-2 tried to understand branch and checkout
+13/07/20	09:00	22:00	coding,debugging	continued dealing with branch, classifying the conditions and stituations to print different output
+14/07/20	20:00	24:00	coding,debugging	still have lots of problems, did final debugging and testing

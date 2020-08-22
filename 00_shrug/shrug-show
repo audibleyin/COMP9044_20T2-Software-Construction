@@ -1,0 +1,70 @@
+#!/bin/dash
+
+########## main script ##########
+#check input params
+repo_name="shrug"
+dir_repo=".$repo_name" 
+log_file="$dir_repo/.log"
+
+if ! test -s "$log_file"
+then
+	echo "$repo_name-show: error: your repository does not have any commits yet"
+	exit 1
+fi
+
+if test $# -ne 1
+then
+	echo "usage: $repo_name-show <commit>:<filename>"
+	exit 1
+fi
+
+# check input argument
+input=`echo $1|grep ':'`
+if test -z "$input"
+then
+	echo "$repo_name-show: error: invalid object $input"
+	exit 1
+fi
+
+# get version number
+version=`echo $1|cut -d':' -f1`
+# get file number
+file_name=`echo $1|cut -d':' -f2`
+dir_index="$dir_repo/index"
+dir_versions="$dir_repo/versions"
+if test -z "$file_name"
+then
+	echo "$repo_name-show: error: invalid filename ''"
+	exit 1
+fi
+
+# check version	
+if test -z "$version"
+then
+	target_file="$dir_index/$file_name"
+	if ! test -e "$target_file"
+	then
+		echo "$repo_name-show: error: '$file_name' not found in index"
+		exit 1	
+	fi
+else
+	if echo "$version"|grep '^-' >> /dev/null
+	then
+		echo "usage: $repo_name-show <commit>:<filename>"
+		exit 1
+	fi
+	# versions file
+	target_file="$dir_versions/$version/$file_name"
+	if [ ! -d "$dir_versions/$version" ]
+	then
+		echo "$repo_name-show: error: unknown commit '$version'"
+		exit 1	
+	fi
+	if ! test -e "$target_file"
+	then
+		echo "$repo_name-show: error: '$file_name' not found in commit $version"
+		exit 1
+	fi		
+fi
+
+cat $target_file

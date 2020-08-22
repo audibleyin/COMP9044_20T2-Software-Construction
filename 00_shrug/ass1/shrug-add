@@ -1,0 +1,49 @@
+#!/bin/dash
+
+dir_repo=".shrug"
+dir_repo_index="$dir_repo/index"
+
+# check no .shrug directory
+if [ ! -d "$dir_repo" ]
+then
+	echo "$0: error: no $dir_repo directory containing shrug repository exists"
+	exit 0
+fi
+
+# check files exists
+for file in $@
+do
+	if [ ! -e "$file" ] && [ ! -e "$dir_repo_index/$file" ]
+	then
+		echo "$0: error: can not open '$file'"
+		exit 0
+	fi
+done
+
+
+for file in $@
+do
+	#if file in root_dire
+	if [ -e "$file" ]
+	then
+		# if file not in index
+		if ! [ -e "$dir_repo_index/$file" ]
+		then
+			cat $file > $dir_repo_index/$file
+			touch .shrug/.add
+			echo 1 > .shrug/.add
+		#if file in index but different
+		else diff "$file" "$dir_repo_index/$file" >/dev/null
+			if [ $? != 0 ]
+			then
+				cat $file > $dir_repo_index/$file
+				touch .shrug/.add
+				echo 1 > .shrug/.add
+			fi
+		fi
+	else
+		touch .shrug/.add
+		echo 1 > .shrug/.add
+	fi
+done
+

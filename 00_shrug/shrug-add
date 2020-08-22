@@ -1,0 +1,39 @@
+#!/bin/dash
+########## main script ##########
+# main folder
+repo_name="shrug"
+dir_repo=".$repo_name"
+dir_repo_index="$dir_repo/index"
+
+# check main folder exists
+if [ ! -d "$dir_repo" ]
+then
+	echo "$0: error: no $dir_repo directory containing $repo_name repository exists"	
+	exit 1
+fi
+
+#check files exists
+for file in $@
+do 
+	if [ ! -e "$file" ] && [ ! -e "$dir_repo_index/$file" ]
+	then 
+		echo "$0: error: can not open '$file'"	
+		exit 1
+	fi
+done
+
+# add files or delete files
+for file in $@
+do
+	# file exist cp file
+	if [ -e $file ]
+	then
+		cat $file > $dir_repo_index/$file
+	else
+		# index file exist delete file
+		if [ -e $dir_repo_index/$file ]
+		then
+			rm $dir_repo_index/$file
+		fi
+	fi
+done

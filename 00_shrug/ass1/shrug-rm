@@ -1,0 +1,205 @@
+#!/bin/dash
+dir_repo=".shrug"
+dir_repo_index="$dir_repo/index"
+dir_repo_log="$dir_repo/.log"
+
+
+# rm file in cur directory
+rm_cur_dir(){
+	if test -e "$1"
+	then
+		rm $1
+		touch $dir_repo/.add
+		echo 1 > $dir_repo/.add
+	fi
+}
+# rm file in index
+rm_index(){
+	if test -e $dir_repo_index/$1
+	then
+		rm $dir_repo_index/$1
+		touch $dir_repo/.add
+		echo 1 > $dir_repo/.add
+	fi
+}
+
+# check 2 file different (think file 1 always exists by default)
+samefile(){
+	#1 exist 2 not exist || 1 exist 2 exist but diff
+	if [ -e "$2" ]
+	then
+		diff -q "$1" "$2" > /dev/null
+		if [ $? -eq 0 ]
+		then
+			return 0
+		else
+			return 1
+		fi
+	else
+		return 1
+	fi
+}
+# check file/.log
+check_log(){
+	if [ ! -e "$1" ]
+	then
+		exit 0
+	fi
+	# num of newest log/repository
+	if [ ! -s $dir_repo_log ]
+	then
+		#no repository yet
+		num=-1		
+	else
+		#the newest log
+		num=$(cat $dir_repo_log|tail -n1| cut -d ' ' -f1)	
+	fi
+
+}
+# shrug-rm: error: 'b' is not in the shrug repository
+not_in_shrug(){
+	check_log $1
+	# check files 
+	samefile "$1" $dir_repo_index/"$1"
+	if [ $? -eq 1 ] #diff
+	then
+		samefile "$1" $dir_repo/"$null"/"$1"
+		if [ $? -eq 1 ] #if different
+		then
+			if [ -e $dir_repo_index/"$1" ] # index and repo must be diff
+			then
+				samefile $dir_repo_index/"$1" $dir_repo/"$num"/"$1"
+				if [ $? -eq 1 ] #diff
+				then
+					return
+				fi
+			else
+				echo "shrug-rm: error: '$1' is not in the shrug repository"
+				exit 0
+			fi
+		fi
+	fi
+}
+# shrug-rm: error: 'b' has changes staged in the index.
+diff_index(){
+	check_log $1
+	
+	samefile "$1" $dir_repo_index/"$1"
+	if [ $? -eq 0 ] #if same
+	then
+		samefile "$1" $dir_repo/"$num"/"$1"
+		if [ $? -eq 1 ]
+		then
+			echo "shrug-rm: error: '$1' has changes staged in the index"
+			exit 0
+		fi
+	fi
+}
+# check index
+chechk_index(){
+	if [ ! -e $dir_repo_index/"$1" ]
+	then
+		return
+	fi
+	# num of newest log/repository
+	if [ ! -s $dir_repo_log ]
+	then
+		num=-1		#no repository yet
+	else
+		num=$(cat $dir_repo_log|tail -n1| cut -d ' ' -f1) 		#the newest log
+	fi
+	
+}
+# shrug-rm: error: 'a' in repository is different to working file.
+diff_wf(){
+	chechk_index $1
+	
+	samefile $dir_repo_index/"$1" $dir_repo/$num/"$1"
+	if [ $? -eq 0 ] #same
+	then
+		samefile $dir_repo_index/"$1" "$1"
+		if [ $? -eq 1 ] #different
+		then
+			echo "shrug-rm: error: '$1' in repository is different to working file"
+			exit 0
+		fi
+	fi
+}
+# 'a' in index is different to both working file and repository'
+diff_both(){
+	chechk_index $1
+	
+	samefile $dir_repo_index/"$1" "$1"
+	if [ $? -eq 1 ] #diff
+	then
+		samefile $dir_repo_index/"$1" .shrug/$num/"$1"
+		if [ $? -eq 1 ] #diff
+		then
+			echo "shrug-rm: error: '$1' in index is different to both working file and repository"
+			exit 0
+		fi
+	fi
+}
+check_force(){
+	check_log $1
+	
+	if ! [ -e $dir_repo_index/"$1" ]
+	then
+		samefile "$1" $dir_repo/$num/"$1"
+		if [ $? -eq 1 ] #diff
+		then
+			echo "shrug-rm: error: '$1' is not in the shrug repository"
+			exit 0
+		fi
+	fi
+}
+
+# shrug-rm -cached -force filename
+if [ "$1" = "--force" ] &&  [ "$2" = "--cached" ]
+then
+	for i in $@
+	do
+		if [ "$i" != "--force" ] && [ "$i" != "--cached" ]
+		then
+				
+			rm_index $i
+			exit 0
+		fi
+	done
+# shrug-rm -force filename
+elif [ "$1" = "--force" ] &&  [ "$2" != "--cached" ]
+then
+	for i in $@
+	do
+		if [ "$i" != "--force" ]
+		then
+			check_force $i
+			rm_cur_dir $i
+			rm_index $i
+		fi
+	done
+# shrug-rm -cached/-force filename
+elif [ "$1" = "--cached" ]
+then
+	for i in $@
+	do
+		if [ "$i" != "--cached" ]
+		then
+			not_in_shrug $i
+			diff_both $i
+		fi
+		rm_index $i
+	done
+# shrug-rm filename
+elif [ "$1" != "--cached" ] && [ "$1" != "--force" ]
+then
+	for i in $@
+	do
+		not_in_shrug $i
+		diff_index $i
+		diff_wf $i
+		diff_both $i
+	done
+	rm_cur_dir $i
+	rm_index $i
+fi

@@ -1,0 +1,54 @@
+#!/bin/dash
+dir_repo=".shrug"
+dir_repo_index="$dir_repo/index"
+file_repo_log="$dir_repo/.log"
+
+# check directiory exists
+if [ ! -d $dir_repo ]
+then
+	echo "shrug-show: error: no $dir_repo directory containing shrug repository exists"
+	exit 1
+fi
+
+if [ $# -ne 1 ]
+then
+	echo "usage: shrug-show <commit>:<filename>"
+	exit 1
+fi
+
+
+
+version=$(echo $1|cut -d ':' -f1)
+file=$(echo $1|cut -d ':' -f2)
+
+
+# string length is 0
+if test -z "$version"  
+then
+	if ! [ -e $dir_repo_index/$file ]
+	then
+		echo "shrug-show: error: '$file' not found in index"
+		exit 0
+	elif test -z $(echo $1|egrep '[^0-9A-Za-z\._\-]')    #no matching
+	then
+		echo "shrug-show: error: '$file' not found in index"
+		exit 0
+	else
+		cat $dir_repo_index/$file
+		exit 0
+	fi
+fi
+
+if [ ! -e $dir_repo/$version ]
+then
+	echo "shrug-show: error: unknown commit '$version'"
+	exit 0
+fi
+if [ ! -e $dir_repo/$version/$file ]
+then
+	echo "shrug-show: error: '$file' not found in commit $version"
+	exit 0
+fi
+
+cat "$dir_repo/$version/$file"
+

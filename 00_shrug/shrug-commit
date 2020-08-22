@@ -1,0 +1,120 @@
+#!/bin/dash
+
+repo_name="shrug"
+dir_repo=".$repo_name"
+dir_repo_index="$dir_repo/index"
+file_repo_log="$dir_repo/.log"
+
+# function get current commit number
+get_current_commit_number(){
+	# get commit number
+	commit_number=`cat $file_repo_log | cut -d' ' -f2| tail -1`
+	# check and set default commit number
+	if test -z $commit_number
+	then
+		# default value
+		commit_number=0
+	else
+		# plus 1 get next commit_number
+		commit_number=`expr $commit_number + 1`
+	fi
+	return $commit_number
+}
+
+
+
+########## main script ##########
+#check input
+if test "$#" -eq 0
+then
+	echo "usage: $repo_name-commit [-a] -m commit-message"
+	exit 1
+fi
+all=0
+if test "$1" = "-a"
+then
+	all=1
+	shift
+fi
+
+if test "$1" = "-m"
+then
+	shift	
+else
+	echo "usage: $repo_name-commit [-a] -m commit-message"
+	exit 1
+fi 
+if test "$#" -ne 1
+then 
+	echo "usage: $repo_name-commit [-a] -m commit-message"
+	exit 1
+fi
+
+if echo "$1"| grep '^-' >> /dev/null
+then  
+	echo "usage: $repo_name-commit [-a] -m commit-message"
+	exit 1
+fi
+
+# config files
+log_file="$dir_repo/.log"
+branch_config_file="$dir_repo/.branch"
+# get the current branch name
+cur_branch=`cat $branch_config_file | grep '\*'|sed 's/\* //g'`
+# all the index dir files
+index_files=`ls $dir_repo/index`
+# get the current brach dir
+dir_branch="$dir_repo/branches/$cur_branch"
+# save logs of commit
+commit_log_file="$dir_repo/.$cur_branch.log"
+dir_index="$dir_repo/index"
+# get commit number
+get_current_commit_number
+commit_number=$?
+
+dir_versions="$dir_repo/versions/$commit_number"
+
+if test "$all" -eq 1
+then
+	# -a append files
+    for file in $index_files
+    do
+        if [ -e "$file" ]
+        then
+        	cat $file > $dir_index/$file
+        fi
+    done
+fi
+
+# check two folders
+if diff -q "$dir_index" "$dir_branch" > /dev/null
+then
+	# echo "index dir $dir_index   branch dir $dir_branch"
+	echo "nothing to commit"
+else
+	# get the target dir
+	mkdir -p "$dir_versions"
+	# copy files from index to branch dir
+	for file in $index_files
+	do
+		if [ -e "$dir_index/$file" ]
+		then
+			cat "$dir_index/$file" > "$dir_versions/$file"
+		fi
+	done
+
+	# clear current branch
+	rm -rf $dir_branch/*
+	for file in $index_files
+       	do
+		if [ -e "$dir_index/$file" ]
+		then
+            cat "$dir_index/$file" > "$dir_branch/$file"
+        fi
+	done
+
+	# add log
+	echo "$cur_branch $commit_number $1" >> $commit_log_file
+	echo "$cur_branch $commit_number $1" >> "$log_file"
+	echo "Committed as commit $commit_number"
+fi

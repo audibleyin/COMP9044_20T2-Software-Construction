@@ -1,0 +1,24 @@
+#!/bin/dash
+
+repo_name="shrug"
+dir_repo=".$repo_name"
+dir_repo_index="$dir_repo/index"
+file_repo_branch="$dir_repo/.branch"
+file_repo_log="$dir_repo/.log"
+
+########## main script ##########
+current_branch=`cat $file_repo_branch | grep '\*'|sed 's/\* //g'`
+commit_branch_log_file="$dir_repo/.$current_branch.log"
+master_branch="master"
+
+# check current master log
+if [ "$current_branch" = "$master_branch" ]
+then
+	cat "$file_repo_log"|grep '^master'|cut -d' ' -f2- |sort -rn
+else
+	# log files exists
+	if test -e "$commit_branch_log_file"
+	then
+		cat $commit_branch_log_file|cut -d' ' -f2- |sort -rn
+	fi
+fi

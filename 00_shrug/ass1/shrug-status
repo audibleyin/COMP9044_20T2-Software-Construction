@@ -1,0 +1,99 @@
+#!/bin/dash
+dir_repo=".shrug"
+dir_repo_index=".shrug/index"
+cur_branch=$(cat "$dir_repo/.current")
+num=branches/$cur_branch
+
+rm .shrug/.status > /dev/null 2>&1
+
+
+#check file different 
+samefile(){
+	diff "$1" "$2" > /dev/null
+	if [ $? != 0 ] #if different
+	then
+		return 1
+	else
+		return 0
+	fi
+}
+
+# file not in working_file but in repo
+for file in $dir_repo/$num/*
+do
+	file_working=$(echo "$file"|cut -d '/' -f4)
+	if [ ! -e "$file_working" ]
+	then
+		#file in repo but not in working_file not in index
+		if [ -e $dir_repo_index/$file_working ]
+		then
+			#file in repo and index but not in working_file
+			echo "$file_working - file deleted" >> $dir_repo/.status
+			
+		else
+			echo "$file_working - deleted" >> $dir_repo/.status
+		fi
+	fi
+done
+
+for file in *
+do
+	#file same as repo
+	if [ -e $dir_repo/$num/"$file" ]
+	then
+		samefile "$file" $dir_repo/$num/"$file"
+		if [ $? -eq 0 ] #same
+		then
+			echo "$file - same as repo" >>$dir_repo/.status
+			continue
+		fi
+	fi
+	# all file in working_directory
+	# same files do not exist in repo but in index
+	if [ ! -e $dir_repo/$num/"$file" ] && [ -e $dir_repo_index/"$file" ]
+	then
+		samefile "$file" $dir_repo_index/"$file"
+		if [ $? -eq 0 ] #same
+		then
+			echo "$file - added to index" >>$dir_repo/.status
+			continue
+		fi
+	
+	# file not in index
+	elif [ ! -e $dir_repo_index/"$file" ]
+	then
+		echo "$file - untracked" >>$dir_repo/.status
+		continue
+
+	# files exist in working_file in index and in repo
+	elif [ -e $dir_repo/$num/"$file" ] && [ -e $dir_repo_index/"$file" ]
+	then
+		#file diff in index
+		samefile "$file" $dir_repo_index/"$file"
+		if [ $? -ne 0 ] #diff
+		then
+			#file diff in index but file_index same as file_repo
+			samefile $dir_repo_index/"$file" $dir_repo/$num/"$file"
+			if [ $? -eq 0 ] #same
+			then
+				echo "$file - file changed, changes not staged for commit" >>$dir_repo/.status
+				continue
+			else #diff
+			#file diff index and file_idnex diff file_repo
+				echo "$file - file changed, different changes staged for commit" >>$dir_repo/.status
+				continue
+			fi
+		#file same as file_index
+		else #same
+			samefile $dir_repo_index/"$file" $dir_repo/$num/"$file"
+			if [ $? -ne 0 ] #diff
+			then
+				echo "$file - file changed, changes staged for commit" >>$dir_repo/.status
+				continue
+			fi
+		fi
+	fi
+done
+
+grep -v '\*' $dir_repo/.status|sort
+			

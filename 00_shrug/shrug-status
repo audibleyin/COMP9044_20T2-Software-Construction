@@ -1,0 +1,53 @@
+#!/bin/dash
+
+# get current branch
+current_branch=`cat .shrug/.branch | grep '\*'|sed 's/\* //g'`
+
+files=`find ./ .shrug/index/ -type f|egrep -v '\.log|\.branch|shrug-.*|test.*|Diary'|sed 's/.*\// /g'|sort |uniq | sort`
+for file_name in $files
+do
+	index_file=".shrug/index/$file_name"
+	repo_file=".shrug/branches/$current_branch/$file_name"
+
+	if [ -e "$file_name" ]
+	then
+		if [ ! -e "$index_file" ] 
+		then
+			echo "$file_name - untracked"
+		
+		else 
+			if  [ ! -e "$repo_file" ]
+			then
+				echo "$file_name - added to index"
+			else
+				if diff -q "$file_name" "$index_file" > /dev/null
+				then 
+					
+					if diff -q "$index_file" "$repo_file" > /dev/null
+					then
+						echo "$file_name - same as repo"
+					else
+						echo "$file_name - file changed, changes staged for commit"
+					fi
+				else
+					if diff -q "$index_file" "$repo_file" > /dev/null
+					then
+						echo "$file_name - file changed, changes not staged for commit"
+					else
+						echo "$file_name - file changed, different changes staged for commit"
+					fi
+				fi
+			fi
+		fi 
+	else
+		if [ -e "$index_file" ]
+		then
+			echo "$file_name - file deleted"
+		else
+			if [ -e "$repo_file" ]
+			then
+				echo "$file_name - deleted"
+			fi
+		fi	
+	fi
+done

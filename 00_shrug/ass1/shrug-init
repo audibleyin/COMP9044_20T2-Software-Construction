@@ -1,0 +1,38 @@
+#!/bin/dash
+#
+# COMP9044 Assignment 01 - shrug-init
+#
+# shrug-init command creates an empty shrug repository
+# and create other relevant files and folders
+#
+# Authors:
+# Chen Wu(z5244467@unsw.edu.au)
+#
+# Written: 01/07/2020
+#
+# 01/07/2020 start to implement basic init function
+#	     modify history folder to versions folder
+#	     add commit log for each branch
+
+########## main script ##########
+
+# check correct input
+if test "$#" -ne 0
+then
+       echo "usage:shrug-init"
+else
+	# check .shrug folder exists,exit
+        if [ -d ".shrug" ]
+        then 
+                echo "shrug-init: error: .shrug already exists"
+        else
+		# create relevant folders
+                mkdir ".shrug"
+		mkdir -p ".shrug/index"
+		mkdir -p ".shrug/branches/master"
+		echo master > .shrug/branches.txt
+		touch ".shrug/.log"
+
+                echo "Initialized empty shrug repository in .shrug"
+        fi
+fi 
